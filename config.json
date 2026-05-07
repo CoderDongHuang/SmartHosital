@@ -1,0 +1,49 @@
+{
+  "system": {
+    "mode": "online",
+    "loop_interval": 0.1,
+    "max_errors": 10,
+    "error_reset_time": 60,
+    "log_level": "INFO",
+    "log_file": "smart_hospital.log"
+  },
+  "network": {
+    "network_mode": "mqtt",
+    "mqtt_broker": "localhost",
+    "mqtt_port": 1883,
+    "mqtt_topic": "smart_hospital/data",
+    "result_topic": "smart_hospital/result",
+    "heartbeat_interval": 30,
+    "reconnect_interval": 5
+  },
+  "ai": {
+    "model_type": "mediapipe_pose",
+    "confidence_threshold": 0.5,
+    "min_detection_confidence": 0.5,
+    "min_tracking_confidence": 0.5,
+    "input_resolution": [256, 256],
+    "max_memory_mb": 1500
+  },
+  "post_processing": {
+    "confidence_threshold": 0.5,
+    "angle_thresholds": {
+      "squat": {
+        "knee": [90, 140],
+        "hip": [80, 120]
+      },
+      "pushup": {
+        "elbow": [60, 120],
+        "shoulder": [80, 160]
+      },
+      "jump": {
+        "knee": [150, 180],
+        "ankle": [80, 110]
+      }
+    }
+  },
+  "simulator": {
+    "sim_data_dir": "./sim_data",
+    "sim_interval": 2,
+    "sim_loop": true
+  }
+}
