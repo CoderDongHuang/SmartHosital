@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # 测试脚本 (test_mediapipe.py)
 # 功能：使用单张图片测试 MediaPipe Pose 推理引擎
 # 用法：python test_mediapipe.py [图片路径]
