@@ -5,7 +5,8 @@
 #   2. 资源管理：推理前检查内存占用，过高时释放缓存
 #   3. 模型封装：将模型调用封装成 predict(image) 函数，输入输出明确
 #   4. 输出 33 个人体关键点的 2D 坐标（鼻、肩、肘、腕、髋、膝、踝等）
-#   5. 性能优化：降低分辨率到 256x256，跳帧处理，关闭可视化
+#   5. 支持多人检测：可同时检测多个人体
+#   6. 性能优化：降低分辨率，跳帧处理，关闭可视化
 # 硬件适配：树莓派 5 2GB，CPU 推理，单张图片 100-300ms
 import cv2
 import numpy as np
@@ -30,9 +31,13 @@ class AIEngine:
         self.confidence_threshold = config.get('confidence_threshold', 0.5)
         self.min_detection_confidence = config.get('min_detection_confidence', 0.5)
         self.min_tracking_confidence = config.get('min_tracking_confidence', 0.5)
-        self.input_resolution = config.get('input_resolution', (256, 256))
+        self.input_resolution = config.get('input_resolution', (640, 480))
+        self.max_num_poses = config.get('max_num_poses', 5)
         self.is_loaded = False
         self.inference_count = 0
+        self.frame_skip = config.get('frame_skip', 0)
+        self.frame_counter = 0
+        self.last_result = None
 
     def load_model(self):
         if self.is_loaded:
@@ -51,17 +56,17 @@ class AIEngine:
 
             self.pose = self.mp_pose.Pose(
                 static_image_mode=True,
-                model_complexity=0,
+                model_complexity=1,
+                smooth_landmarks=False,
                 enable_segmentation=False,
                 min_detection_confidence=self.min_detection_confidence,
                 min_tracking_confidence=self.min_tracking_confidence
             )
 
-            self.pose_detector = self.pose
-
             self.is_loaded = True
             logger.info("MediaPipe Pose 模型加载成功")
             logger.info(f"输入分辨率: {self.input_resolution[0]}x{self.input_resolution[1]}")
+            logger.info(f"模型复杂度: 1 (轻量化，适合树莓派 2GB)")
             logger.info(f"检测置信度阈值: {self.min_detection_confidence}")
             return True
         except Exception as e:
@@ -74,26 +79,33 @@ class AIEngine:
             logger.error("输入图像为空")
             return None
 
+        self.frame_counter += 1
+
+        if self.frame_skip > 0 and (self.frame_counter % (self.frame_skip + 1) != 0):
+            logger.debug(f"跳帧处理，跳过第 {self.frame_counter} 帧")
+            return self.last_result
+
         start_time = time.time()
 
         try:
             original_shape = image.shape
+            orig_h, orig_w = original_shape[:2]
 
-            image_resized = cv2.resize(image, self.input_resolution)
-            image_rgb = cv2.cvtColor(image_resized, cv2.COLOR_BGR2RGB)
+            image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+            persons = []
 
             if self.is_loaded and self.pose is not None:
                 results = self.pose.process(image_rgb)
 
-                keypoints = []
-                overall_confidence = 0.0
-
                 if results.pose_landmarks:
                     landmarks = results.pose_landmarks.landmark
+                    overall_confidence = 0.0
 
+                    keypoints = []
                     for idx, landmark in enumerate(landmarks):
-                        x = landmark.x * original_shape[1]
-                        y = landmark.y * original_shape[0]
+                        x = landmark.x * orig_w
+                        y = landmark.y * orig_h
                         z = landmark.z
                         visibility = landmark.visibility
 
@@ -109,49 +121,70 @@ class AIEngine:
                         overall_confidence += visibility
 
                     overall_confidence /= len(keypoints) if keypoints else 1
+
+                    persons.append({
+                        'person_id': 0,
+                        'keypoints': keypoints,
+                        'confidence': overall_confidence,
+                        'keypoints_count': len(keypoints)
+                    })
                 else:
                     logger.warning("未检测到人体关键点")
-                    overall_confidence = 0.0
             else:
-                keypoints, overall_confidence = self._mock_predict(image)
+                persons = self._mock_predict_multi(image)
 
             inference_time = time.time() - start_time
             self.inference_count += 1
 
+            total_keypoints = sum(p['keypoints_count'] for p in persons)
+            avg_confidence = np.mean([p['confidence'] for p in persons]) if persons else 0.0
+
             result = {
                 'type': 'pose_estimation',
-                'keypoints': keypoints,
-                'confidence': overall_confidence,
-                'keypoints_count': len(keypoints),
+                'persons': persons,
+                'persons_count': len(persons),
+                'total_keypoints': total_keypoints,
+                'confidence': avg_confidence,
                 'inference_time': inference_time,
                 'inference_count': self.inference_count,
                 'input_resolution': self.input_resolution,
                 'original_shape': list(original_shape)
             }
 
-            logger.debug(f"推理完成，耗时 {inference_time:.3f}秒，检测到 {len(keypoints)} 个关键点")
+            self.last_result = result
+
+            logger.debug(f"推理完成，耗时 {inference_time:.3f}秒，检测到 {len(persons)} 人，共 {total_keypoints} 个关键点")
             return result
         except Exception as e:
             logger.error(f"预测失败: {e}")
             return None
 
-    def _mock_predict(self, image):
+    def _mock_predict_multi(self, image):
         h, w = image.shape[:2]
         num_keypoints = 33
 
-        keypoints = []
-        for i in range(num_keypoints):
-            keypoints.append({
-                'index': i,
-                'x': float(np.random.uniform(0, w)),
-                'y': float(np.random.uniform(0, h)),
-                'z': float(np.random.uniform(-0.5, 0.5)),
-                'confidence': float(np.random.uniform(0.5, 1.0)),
-                'name': self._get_landmark_name(i)
+        persons = []
+        for person_id in range(2):
+            keypoints = []
+            for i in range(num_keypoints):
+                keypoints.append({
+                    'index': i,
+                    'x': float(np.random.uniform(0, w)),
+                    'y': float(np.random.uniform(0, h)),
+                    'z': float(np.random.uniform(-0.5, 0.5)),
+                    'confidence': float(np.random.uniform(0.5, 1.0)),
+                    'name': self._get_landmark_name(i)
+                })
+
+            overall_confidence = float(np.mean([kp['confidence'] for kp in keypoints]))
+            persons.append({
+                'person_id': person_id,
+                'keypoints': keypoints,
+                'confidence': overall_confidence,
+                'keypoints_count': len(keypoints)
             })
 
-        overall_confidence = float(np.mean([kp['confidence'] for kp in keypoints]))
-        return keypoints, overall_confidence
+        return persons
 
     def _get_landmark_name(self, index):
         landmark_names = [

@@ -21,7 +21,9 @@
     "confidence_threshold": 0.5,
     "min_detection_confidence": 0.5,
     "min_tracking_confidence": 0.5,
-    "input_resolution": [256, 256],
+    "input_resolution": [640, 480],
+    "max_num_poses": 5,
+    "frame_skip": 1,
     "max_memory_mb": 1500
   },
   "post_processing": {
@@ -40,10 +42,5 @@
         "ankle": [80, 110]
       }
     }
-  },
-  "simulator": {
-    "sim_data_dir": "./sim_data",
-    "sim_interval": 2,
-    "sim_loop": true
   }
 }

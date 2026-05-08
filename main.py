@@ -2,7 +2,7 @@
 # 功能：系统的总开关和看门狗，负责初始化所有模块、启动主循环、监控程序状态、捕获全局异常
 # 职责：
 #   1. 加载配置文件并初始化所有子模块
-#   2. 维护无限主循环，协调在线模式和离线模拟模式的切换
+#   2. 维护无限主循环，处理在线数据流
 #   3. 监控错误次数，超过阈值时自动尝试恢复（网络重连、模型重载）
 #   4. 处理信号中断（Ctrl+C），优雅关闭系统
 #   5. 统计并输出最终运行数据
@@ -20,7 +20,6 @@ from data_parser import DataParser
 from ai_engine import AIEngine
 from post_processor import PostProcessor
 from result_reporter import ResultReporter
-from data_simulator import DataSimulator
 
 
 class SmartHospitalSystem:
@@ -69,11 +68,6 @@ class SmartHospitalSystem:
                     'pushup': {'elbow': (60, 120), 'shoulder': (80, 160)},
                     'jump': {'knee': (150, 180), 'ankle': (80, 110)}
                 }
-            },
-            'simulator': {
-                'sim_data_dir': './sim_data',
-                'sim_interval': 2,
-                'sim_loop': True
             }
         }
 
@@ -151,11 +145,6 @@ class SmartHospitalSystem:
                 self.modules['network']
             )
 
-            self.logger.info("初始化数据模拟器...")
-            self.modules['simulator'] = DataSimulator(self.config['simulator'])
-            if not self.modules['simulator'].initialize():
-                self.logger.warning("模拟器初始化失败")
-
             self.modules['network'].start_heartbeat()
 
             self.stats['start_time'] = datetime.now()
@@ -205,17 +194,7 @@ class SmartHospitalSystem:
             self.shutdown()
 
     def _process_cycle(self):
-        mode = self.config['system']['mode']
-
-        if mode == 'online':
-            self._process_online_mode()
-        elif mode == 'offline':
-            self._process_offline_mode()
-        else:
-            self._process_online_mode()
-            if self.stats['data_received'] == 0:
-                self.logger.info("未收到数据，切换到离线模式")
-                self.config['system']['mode'] = 'offline'
+        self._process_online_mode()
 
     def _process_online_mode(self):
         raw_data = self.modules['network'].get_data(block=False)
@@ -256,44 +235,6 @@ class SmartHospitalSystem:
                 f"评分: {result.get('quality_score', 0):.1f} | "
                 f"置信度: {result.get('confidence', 0):.2%}"
             )
-
-    def _process_offline_mode(self):
-        sim_data = self.modules['simulator'].get_next_data()
-        if sim_data is None:
-            self.logger.info("无可用模拟数据")
-            return
-
-        self.stats['data_received'] += 1
-        self.logger.info(f"模拟数据: {self.stats['data_received']}")
-
-        parsed_data = self.modules['parser'].parse_and_validate(sim_data)
-        if parsed_data is None:
-            self.logger.warning("模拟数据验证失败")
-            return
-
-        ai_result = self.modules['ai'].predict(parsed_data['image'])
-        if ai_result is None:
-            self.logger.error("模拟数据AI推理失败")
-            return
-
-        processed_result = self.modules['post_processor'].process(ai_result, parsed_data)
-        if processed_result is None:
-            self.logger.error("模拟数据后处理失败")
-            return
-
-        self.stats['data_processed'] += 1
-
-        success = self.modules['reporter'].report(processed_result, is_mock=True)
-        if success:
-            self.stats['results_reported'] += 1
-            result = processed_result.get('result', {})
-            self.logger.info(
-                f"[模拟] 结果: {result.get('action_type', '未知')} | "
-                f"评分: {result.get('quality_score', 0):.1f} | "
-                f"置信度: {result.get('confidence', 0):.2%}"
-            )
-
-        time.sleep(self.config['simulator'].get('sim_interval', 2))
 
     def _attempt_recovery(self):
         self.logger.info("尝试系统恢复...")

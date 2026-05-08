@@ -39,8 +39,16 @@ class PostProcessor:
             return None
 
     def _process_pose(self, ai_result, parsed_data):
-        keypoints = ai_result.get('keypoints', [])
+        persons = ai_result.get('persons', [])
         confidence = ai_result.get('confidence', 0)
+
+        if not persons:
+            logger.warning("未检测到人体")
+            return self._create_result(parsed_data, {
+                'status': 'no_person',
+                'confidence': 0,
+                'message': '未检测到人体'
+            })
 
         if confidence < self.confidence_threshold:
             logger.warning(f"置信度过低: {confidence}")
@@ -50,18 +58,33 @@ class PostProcessor:
                 'message': '识别置信度不足'
             })
 
-        angles = self._calculate_joint_angles(keypoints)
-        action_type = self._classify_action(angles)
-        quality_score = self._evaluate_action_quality(angles, action_type)
+        person_results = []
+        for person in persons:
+            person_id = person.get('person_id', 0)
+            keypoints = person.get('keypoints', [])
+            person_confidence = person.get('confidence', 0)
+
+            angles = self._calculate_joint_angles(keypoints)
+            action_type = self._classify_action(angles)
+            quality_score = self._evaluate_action_quality(angles, action_type)
+
+            person_results.append({
+                'person_id': person_id,
+                'action_type': action_type,
+                'quality_score': quality_score,
+                'joint_angles': angles,
+                'keypoints_count': len(keypoints),
+                'confidence': person_confidence,
+                'feedback': self._generate_feedback(action_type, quality_score, angles)
+            })
 
         result_data = {
             'status': 'success',
-            'action_type': action_type,
-            'quality_score': quality_score,
-            'joint_angles': angles,
-            'keypoints_count': len(keypoints),
+            'persons_count': len(persons),
+            'persons': person_results,
+            'total_keypoints': ai_result.get('total_keypoints', 0),
             'confidence': confidence,
-            'feedback': self._generate_feedback(action_type, quality_score, angles)
+            'feedback': self._generate_multi_person_feedback(person_results)
         }
 
         return self._create_result(parsed_data, result_data)
@@ -220,6 +243,20 @@ class PostProcessor:
             return f"{action_type}动作需要改进，请参考标准动作"
         else:
             return f"{action_type}动作不规范，建议重新练习"
+
+    def _generate_multi_person_feedback(self, person_results):
+        if not person_results:
+            return "未检测到人体"
+        
+        if len(person_results) == 1:
+            return person_results[0]['feedback']
+        
+        feedback_parts = []
+        for person in person_results:
+            person_id = person['person_id']
+            feedback_parts.append(f"人员{person_id}: {person['feedback']}")
+        
+        return " | ".join(feedback_parts)
 
     def _create_result(self, parsed_data, result_data):
         return {
