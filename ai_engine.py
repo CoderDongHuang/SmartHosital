@@ -155,19 +155,19 @@ class AIEngine:
 
     def _get_landmark_name(self, index):
         landmark_names = [
-            'nose', 'left_eye_inner', 'left_eye', 'left_eye_outer',
-            'right_eye_inner', 'right_eye', 'right_eye_outer',
-            'left_ear', 'right_ear', 'mouth_left', 'mouth_right',
-            'left_shoulder', 'right_shoulder', 'left_elbow', 'right_elbow',
-            'left_wrist', 'right_wrist', 'left_pinky', 'right_pinky',
-            'left_index', 'right_index', 'left_thumb', 'right_thumb',
-            'left_hip', 'right_hip', 'left_knee', 'right_knee',
-            'left_ankle', 'right_ankle', 'left_heel', 'right_heel',
-            'left_foot_index', 'right_foot_index'
+            '鼻子', '左眼内', '左眼', '左眼外',
+            '右眼内', '右眼', '右眼外',
+            '左耳', '右耳', '左嘴角', '右嘴角',
+            '左肩', '右肩', '左肘', '右肘',
+            '左腕', '右腕', '左小指', '右小指',
+            '左食指', '右食指', '左拇指', '右拇指',
+            '左髋', '右髋', '左膝', '右膝',
+            '左踝', '右踝', '左脚跟', '右脚跟',
+            '左脚尖', '右脚尖'
         ]
         if index < len(landmark_names):
             return landmark_names[index]
-        return f'landmark_{index}'
+        return f'关键点_{index}'
 
     def release(self):
         if self.pose is not None:
