@@ -42,5 +42,19 @@
         "ankle": [80, 110]
       }
     }
+  },
+  "visualizer": {
+    "draw_frame_skip": 3,
+    "line_color": [0, 255, 0],
+    "line_thickness": 2,
+    "text_color": [0, 255, 255],
+    "text_size": 24
+  },
+  "voice_tts": {
+    "enabled": false,
+    "device_type": "syn6288",
+    "serial_port": "/dev/ttyUSB0",
+    "baudrate": 9600,
+    "min_interval": 3.0
   }
 }

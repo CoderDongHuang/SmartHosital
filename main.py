@@ -20,6 +20,8 @@ from data_parser import DataParser
 from ai_engine import AIEngine
 from post_processor import PostProcessor
 from result_reporter import ResultReporter
+from visualizer import Visualizer
+from voice_tts import VoiceTTS
 
 
 class SmartHospitalSystem:
@@ -145,6 +147,12 @@ class SmartHospitalSystem:
                 self.modules['network']
             )
 
+            self.logger.info("初始化可视化模块...")
+            self.modules['visualizer'] = Visualizer(self.config.get('visualizer', {}))
+
+            self.logger.info("初始化语音提示模块...")
+            self.modules['voice_tts'] = VoiceTTS(self.config.get('voice_tts', {}))
+
             self.modules['network'].start_heartbeat()
 
             self.stats['start_time'] = datetime.now()
@@ -236,6 +244,12 @@ class SmartHospitalSystem:
                 f"置信度: {result.get('confidence', 0):.2%}"
             )
 
+        if 'visualizer' in self.modules:
+            self.modules['visualizer'].draw(parsed_data['image'], processed_result)
+
+        if 'voice_tts' in self.modules:
+            self.modules['voice_tts'].speak(processed_result)
+
     def _attempt_recovery(self):
         self.logger.info("尝试系统恢复...")
 
@@ -268,6 +282,9 @@ class SmartHospitalSystem:
 
             if 'ai' in self.modules:
                 self.modules['ai'].release()
+
+            if 'voice_tts' in self.modules:
+                self.modules['voice_tts'].cleanup()
 
             self._print_final_stats()
         except Exception as e:
