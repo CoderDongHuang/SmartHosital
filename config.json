@@ -1,22 +1,23 @@
 {
   "system": {
-    "mode": "online",
+    "mode": "camera",
     "loop_interval": 0.1,
     "max_errors": 10,
     "error_reset_time": 60,
     "log_level": "INFO",
     "log_file": "smart_hospital.log"
   },
+  "camera": {
+    "device_id": 0,
+    "width": 640,
+    "height": 480
+  },
   "network": {
     "network_mode": "mqtt",
-    "platform": "onenet",
-    "mqtt_broker": "mqtt.heclouds.com",
+    "mqtt_broker": "localhost",
     "mqtt_port": 1883,
-    "product_id": "你的产品ID",
-    "device_name": "你的设备名称",
-    "token": "你的Token（使用 onenet_token.py 生成）",
-    "mqtt_topic": "$sys/{pid}/{device-name}/thing/property/set",
-    "result_topic": "$sys/{pid}/{device-name}/thing/property/post",
+    "mqtt_topic": "smart_hospital/data",
+    "result_topic": "smart_hospital/result",
     "heartbeat_interval": 30,
     "reconnect_interval": 5
   },
@@ -60,5 +61,9 @@
     "serial_port": "/dev/ttyUSB0",
     "baudrate": 9600,
     "min_interval": 3.0
+  },
+  "web_server": {
+    "web_host": "0.0.0.0",
+    "web_port": 5000
   }
 }

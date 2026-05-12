@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智慧医院康复动作识别系统</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            background: #f5f5dc;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: #333;
+        }
+
+        .header .status {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #4ade80;
+        }
+
+        .status.offline {
+            color: #f87171;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .video-section {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .video-section h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #2a5298;
+        }
+
+        .video-container {
+            position: relative;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+        }
+
+        .video-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .video-placeholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #6b7280;
+        }
+
+        .video-placeholder svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 10px;
+        }
+
+        .info-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h3 {
+            font-size: 16px;
+            color: #2a5298;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .result-item {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .result-item .label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .result-item .value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .score-value {
+            color: #4ade80;
+        }
+
+        .score-value.low {
+            color: #f87171;
+        }
+
+        .score-value.medium {
+            color: #facc15;
+        }
+
+        .feedback-box {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            min-height: 60px;
+        }
+
+        .feedback-box .label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .feedback-box .content {
+            font-size: 16px;
+            line-height: 1.5;
+            color: #333;
+        }
+
+        .device-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .device-item {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .device-item .device-name {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .device-item .device-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #4ade80;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 200px;
+            margin-top: 10px;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-item .stat-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2a5298;
+        }
+
+        .stat-item .stat-label {
+            font-size: 11px;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>智慧医院康复动作识别系统</h1>
+        <div class="status" id="connectionStatus">连接中...</div>
+    </div>
+
+    <div class="container">
+        <div class="video-section">
+            <h2>实时视频流</h2>
+            <div class="video-container">
+                <img id="videoStream" src="/video_feed" alt="视频流">
+                <div class="video-placeholder" id="videoPlaceholder">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <p>等待视频流...</p>
+                </div>
+            </div>
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <div class="stat-value" id="statProcessed">0</div>
+                    <div class="stat-label">已处理帧</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statAvgScore">0</div>
+                    <div class="stat-label">平均评分</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statInferenceTime">0ms</div>
+                    <div class="stat-label">推理耗时</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statDevices">0</div>
+                    <div class="stat-label">设备数量</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <div class="card">
+                <h3>识别结果</h3>
+                <div class="result-grid">
+                    <div class="result-item">
+                        <div class="label">动作类型</div>
+                        <div class="value" id="actionType">--</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="label">质量评分</div>
+                        <div class="value score-value" id="qualityScore">--</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="label">置信度</div>
+                        <div class="value" id="confidence">--</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="label">检测人数</div>
+                        <div class="value" id="personsCount">--</div>
+                    </div>
+                </div>
+                <div class="feedback-box">
+                    <div class="label">反馈建议</div>
+                    <div class="content" id="feedback">等待识别结果...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>评分趋势</h3>
+                <div class="chart-container">
+                    <canvas id="scoreChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>其他设备数据</h3>
+                <div class="device-list" id="deviceList">
+                    <div class="device-item">
+                        <span class="device-name">等待设备连接...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const scoreHistory = [];
+        const maxHistory = 20;
+        let processedCount = 0;
+        let totalScore = 0;
+
+        const statusEl = document.getElementById('connectionStatus');
+        const actionTypeEl = document.getElementById('actionType');
+        const qualityScoreEl = document.getElementById('qualityScore');
+        const confidenceEl = document.getElementById('confidence');
+        const personsCountEl = document.getElementById('personsCount');
+        const feedbackEl = document.getElementById('feedback');
+        const videoPlaceholder = document.getElementById('videoPlaceholder');
+        const videoStream = document.getElementById('videoStream');
+        const deviceListEl = document.getElementById('deviceList');
+
+        const scoreCtx = document.getElementById('scoreChart').getContext('2d');
+        const scoreChart = new Chart(scoreCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: '评分',
+                    data: [],
+                    borderColor: '#4ade80',
+                    backgroundColor: 'rgba(74, 222, 128, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                        ticks: { color: '#666' }
+                    },
+                    x: {
+                        grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                        ticks: { color: '#666' }
+                    }
+                }
+            }
+        });
+
+        socket.on('connect', () => {
+            statusEl.textContent = '已连接';
+            statusEl.classList.remove('offline');
+        });
+
+        socket.on('disconnect', () => {
+            statusEl.textContent = '已断开';
+            statusEl.classList.add('offline');
+        });
+
+        socket.on('result_update', (data) => {
+            const result = data.result || data;
+
+            actionTypeEl.textContent = result.action_type || '--';
+            qualityScoreEl.textContent = result.quality_score ? result.quality_score.toFixed(1) : '--';
+            confidenceEl.textContent = result.confidence ? (result.confidence * 100).toFixed(0) + '%' : '--';
+            personsCountEl.textContent = result.persons_count || '--';
+            feedbackEl.textContent = result.feedback || '等待识别结果...';
+
+            const score = result.quality_score || 0;
+            qualityScoreEl.className = 'value score-value';
+            if (score < 60) qualityScoreEl.classList.add('low');
+            else if (score < 80) qualityScoreEl.classList.add('medium');
+
+            if (result.quality_score) {
+                processedCount++;
+                totalScore += result.quality_score;
+                document.getElementById('statProcessed').textContent = processedCount;
+                document.getElementById('statAvgScore').textContent = (totalScore / processedCount).toFixed(1);
+            }
+
+            if (result.inference_time) {
+                document.getElementById('statInferenceTime').textContent = (result.inference_time * 1000).toFixed(0) + 'ms';
+            }
+
+            const now = new Date().toLocaleTimeString('zh-CN');
+            scoreHistory.push({ time: now, score: score });
+            if (scoreHistory.length > maxHistory) scoreHistory.shift();
+
+            scoreChart.data.labels = scoreHistory.map(h => h.time);
+            scoreChart.data.datasets[0].data = scoreHistory.map(h => h.score);
+            scoreChart.update();
+
+            videoPlaceholder.style.display = 'none';
+        });
+
+        socket.on('device_data_update', (data) => {
+            updateDeviceList(data);
+        });
+
+        function updateDeviceList(data) {
+            const deviceData = data.data || {};
+            const deviceId = data.device_id || '未知设备';
+
+            let html = '';
+            for (const [key, value] of Object.entries(deviceData)) {
+                if (key === 'device_id' || key === 'timestamp') continue;
+                html += `
+                    <div class="device-item">
+                        <span class="device-name">${key}</span>
+                        <span class="device-value">${typeof value === 'number' ? value.toFixed(1) : value}</span>
+                    </div>
+                `;
+            }
+
+            if (html) {
+                deviceListEl.innerHTML = html;
+                document.getElementById('statDevices').textContent = 
+                    document.querySelectorAll('.device-item').length;
+            }
+        }
+
+        videoStream.onload = () => {
+            videoPlaceholder.style.display = 'none';
+        };
+
+        videoStream.onerror = () => {
+            videoPlaceholder.style.display = 'block';
+            videoPlaceholder.querySelector('p').textContent = '视频流不可用';
+        };
+
+        fetch('/api/latest_result')
+            .then(res => res.json())
+            .then(data => {
+                if (Object.keys(data).length > 0) {
+                    socket.emit('result_update', data);
+                }
+            });
+    </script>
+</body>
+</html>

@@ -67,9 +67,9 @@ class Visualizer:
         self.config = config
         self.frame_skip = config.get('draw_frame_skip', 3)
         self.frame_counter = 0
-        self.line_color = config.get('line_color', (0, 255, 0))
+        self.line_color = tuple(config.get('line_color', [0, 255, 0]))
         self.line_thickness = config.get('line_thickness', 2)
-        self.text_color = config.get('text_color', (0, 255, 255))
+        self.text_color = tuple(config.get('text_color', [0, 255, 255]))
         self.text_size = config.get('text_size', 24)
 
     def draw(self, image, processed_result):

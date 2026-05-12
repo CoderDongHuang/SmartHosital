@@ -2,17 +2,18 @@
 # 功能：系统的总开关和看门狗，负责初始化所有模块、启动主循环、监控程序状态、捕获全局异常
 # 职责：
 #   1. 加载配置文件并初始化所有子模块
-#   2. 维护无限主循环，处理在线数据流
+#   2. 维护无限主循环，处理在线数据流或本地摄像头
 #   3. 监控错误次数，超过阈值时自动尝试恢复（网络重连、模型重载）
 #   4. 处理信号中断（Ctrl+C），优雅关闭系统
 #   5. 统计并输出最终运行数据
-# 数据流：接收数据 -> 解析校验 -> AI推理 -> 后处理评分 -> 结果上报
+# 数据流：摄像头/网络 -> AI推理 -> 后处理评分 -> 结果上报/Web显示
 import os
 import sys
 import time
 import json
 import logging
 import signal
+import cv2
 from datetime import datetime
 
 from network_client import NetworkClient
@@ -22,6 +23,7 @@ from post_processor import PostProcessor
 from result_reporter import ResultReporter
 from visualizer import Visualizer
 from voice_tts import VoiceTTS
+from web_server import WebServer
 
 
 class SmartHospitalSystem:
@@ -36,6 +38,10 @@ class SmartHospitalSystem:
             'results_reported': 0,
             'errors': 0
         }
+
+        self.camera = None
+        self.frame_counter = 0
+        self.camera_skip = 3
 
         self._setup_logging()
         self._setup_signal_handlers()
@@ -153,7 +159,12 @@ class SmartHospitalSystem:
             self.logger.info("初始化语音提示模块...")
             self.modules['voice_tts'] = VoiceTTS(self.config.get('voice_tts', {}))
 
-            self.modules['network'].start_heartbeat()
+            self.logger.info("初始化 Web 服务器...")
+            self.modules['web_server'] = WebServer(self.config.get('web_server', {'web_port': 5000, 'web_host': '0.0.0.0'}))
+            self.modules['web_server'].run_async()
+
+            self.logger.info("初始化本地摄像头...")
+            self._init_camera()
 
             self.stats['start_time'] = datetime.now()
             self.is_running = True
@@ -202,7 +213,85 @@ class SmartHospitalSystem:
             self.shutdown()
 
     def _process_cycle(self):
-        self._process_online_mode()
+        mode = self.config['system'].get('mode', 'camera')
+        if mode == 'camera':
+            self._process_camera_mode()
+        else:
+            self._process_online_mode()
+
+    def _init_camera(self):
+        camera_id = self.config.get('camera', {}).get('device_id', 0)
+        self.camera = cv2.VideoCapture(camera_id)
+        if not self.camera.isOpened():
+            self.logger.warning(f"摄像头 {camera_id} 打开失败，将尝试在线模式")
+            self.config['system']['mode'] = 'online'
+        else:
+            width = self.config.get('camera', {}).get('width', 640)
+            height = self.config.get('camera', {}).get('height', 480)
+            self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+            self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+            self.logger.info(f"摄像头已打开: {camera_id} ({width}x{height})")
+
+    def _process_camera_mode(self):
+        if self.camera is None or not self.camera.isOpened():
+            self.logger.warning("摄像头不可用，切换到在线模式")
+            self.config['system']['mode'] = 'online'
+            return
+
+        self.frame_counter += 1
+        if self.frame_counter % self.camera_skip != 0:
+            return
+
+        ret, frame = self.camera.read()
+        if not ret or frame is None:
+            self.logger.warning("读取摄像头失败")
+            return
+
+        self.stats['data_received'] += 1
+
+        if not self.modules['ai'].check_memory():
+            self.logger.warning("内存使用过高，释放缓存")
+            self.modules['ai'].release()
+            self.modules['ai'].load_model()
+
+        ai_result = self.modules['ai'].predict(frame)
+        if ai_result is None:
+            self.logger.error("AI推理失败")
+            return
+
+        parsed_data = {
+            'image': frame,
+            'timestamp': datetime.now().isoformat(),
+            'device_id': 'local_camera',
+            'data_id': f"local_camera_{int(time.time())}"
+        }
+
+        processed_result = self.modules['post_processor'].process(ai_result, parsed_data)
+        if processed_result is None:
+            self.logger.error("后处理失败")
+            return
+
+        self.stats['data_processed'] += 1
+
+        success = self.modules['reporter'].report(processed_result, is_mock=False)
+        if success:
+            self.stats['results_reported'] += 1
+            result = processed_result.get('result', {})
+            self.logger.info(
+                f"结果: {result.get('action_type', '未知')} | "
+                f"评分: {result.get('quality_score', 0):.1f} | "
+                f"置信度: {result.get('confidence', 0):.2%}"
+            )
+
+        if 'visualizer' in self.modules:
+            self.modules['visualizer'].draw(frame, processed_result)
+
+        if 'web_server' in self.modules:
+            self.modules['web_server'].update_frame(frame)
+            self.modules['web_server'].update_result(processed_result)
+
+        if 'voice_tts' in self.modules:
+            self.modules['voice_tts'].speak(processed_result)
 
     def _process_online_mode(self):
         raw_data = self.modules['network'].get_data(block=False)
@@ -247,6 +336,10 @@ class SmartHospitalSystem:
         if 'visualizer' in self.modules:
             self.modules['visualizer'].draw(parsed_data['image'], processed_result)
 
+        if 'web_server' in self.modules:
+            self.modules['web_server'].update_frame(parsed_data['image'])
+            self.modules['web_server'].update_result(processed_result)
+
         if 'voice_tts' in self.modules:
             self.modules['voice_tts'].speak(processed_result)
 
@@ -277,6 +370,10 @@ class SmartHospitalSystem:
         self.is_running = False
 
         try:
+            if self.camera is not None:
+                self.camera.release()
+                self.logger.info("摄像头已关闭")
+
             if 'network' in self.modules:
                 self.modules['network'].stop()
 

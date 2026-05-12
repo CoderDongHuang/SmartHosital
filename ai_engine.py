@@ -128,9 +128,9 @@ class AIEngine:
                         'keypoints_count': len(keypoints)
                     })
                 else:
-                    logger.warning("未检测到人体关键点")
+                    logger.debug("未检测到人体关键点")
             else:
-                logger.warning("模型未加载，无法推理")
+                logger.debug("模型未加载，跳过推理")
 
             inference_time = time.time() - start_time
             self.inference_count += 1
