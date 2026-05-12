@@ -48,6 +48,61 @@ class ResultReporter:
     def _format_result(self, processed_result, is_mock=False):
         result_data = processed_result.get('result', {})
 
+        platform = self.config.get('platform', 'custom')
+
+        if platform == 'onenet':
+            return self._format_onenet_result(processed_result, result_data, is_mock)
+        else:
+            return self._format_custom_result(processed_result, result_data, is_mock)
+
+    def _format_onenet_result(self, processed_result, result_data, is_mock=False):
+        import time
+        timestamp_ms = int(time.time() * 1000)
+
+        formatted = {
+            'id': str(processed_result.get('data_id', ''))[:13],
+            'version': '1.0',
+            'params': {
+                'action_type': {
+                    'value': result_data.get('action_type', '未知'),
+                    'time': timestamp_ms
+                },
+                'quality_score': {
+                    'value': result_data.get('quality_score', 0),
+                    'time': timestamp_ms
+                },
+                'confidence': {
+                    'value': result_data.get('confidence', 0),
+                    'time': timestamp_ms
+                },
+                'feedback': {
+                    'value': result_data.get('feedback', ''),
+                    'time': timestamp_ms
+                },
+                'status': {
+                    'value': result_data.get('status', 'unknown'),
+                    'time': timestamp_ms
+                }
+            }
+        }
+
+        if 'joint_angles' in result_data:
+            angles = result_data['joint_angles']
+            for angle_name, angle_value in angles.items():
+                formatted['params'][f'angle_{angle_name}'] = {
+                    'value': angle_value,
+                    'time': timestamp_ms
+                }
+
+        if 'keypoints_count' in result_data:
+            formatted['params']['keypoints_count'] = {
+                'value': result_data['keypoints_count'],
+                'time': timestamp_ms
+            }
+
+        return formatted
+
+    def _format_custom_result(self, processed_result, result_data, is_mock=False):
         formatted = {
             'data_id': processed_result.get('data_id'),
             'device_id': processed_result.get('device_id'),

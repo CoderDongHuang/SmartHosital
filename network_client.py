@@ -48,7 +48,23 @@ class NetworkClient:
             self.client.on_message = self._on_mqtt_message
             self.client.on_disconnect = self._on_mqtt_disconnect
 
-            self.client.connect(broker, port, 60)
+            platform = self.config.get('platform', 'custom')
+
+            if platform == 'onenet':
+                client_id = self.config.get('device_name', '')
+                username = self.config.get('product_id', '')
+                password = self.config.get('token', '')
+
+                if not client_id or not username or not password:
+                    logger.error("OneNET 平台需要配置 device_name、product_id 和 token")
+                    return False
+
+                self.client.username_pw_set(username, password)
+                self.client.connect(broker, port, 60)
+                logger.info(f"OneNET MQTT 连接到 {broker}:{port}")
+            else:
+                self.client.connect(broker, port, 60)
+
             self.client.subscribe(topic)
             self.client.loop_start()
 

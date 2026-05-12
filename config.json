@@ -9,10 +9,14 @@
   },
   "network": {
     "network_mode": "mqtt",
-    "mqtt_broker": "localhost",
+    "platform": "onenet",
+    "mqtt_broker": "mqtt.heclouds.com",
     "mqtt_port": 1883,
-    "mqtt_topic": "smart_hospital/data",
-    "result_topic": "smart_hospital/result",
+    "product_id": "你的产品ID",
+    "device_name": "你的设备名称",
+    "token": "你的Token（使用 onenet_token.py 生成）",
+    "mqtt_topic": "$sys/{pid}/{device-name}/thing/property/set",
+    "result_topic": "$sys/{pid}/{device-name}/thing/property/post",
     "heartbeat_interval": 30,
     "reconnect_interval": 5
   },
