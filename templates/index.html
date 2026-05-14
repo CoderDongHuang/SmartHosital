@@ -21,22 +21,27 @@
         }
 
         .header {
-            background: rgba(255, 255, 255, 0.8);
-            padding: 20px;
-            text-align: center;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px 20px;
             border-bottom: 2px solid rgba(0, 0, 0, 0.1);
         }
 
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
         .header h1 {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 600;
-            letter-spacing: 2px;
-            color: #333;
+            color: #2a5298;
         }
 
         .header .status {
-            margin-top: 10px;
-            font-size: 14px;
+            font-size: 13px;
             color: #4ade80;
         }
 
@@ -44,24 +49,121 @@
             color: #f87171;
         }
 
+        .nav-bar {
+            max-width: 1400px;
+            margin: 10px auto 0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            padding: 8px 24px;
+            border: none;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.05);
+            color: #666;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover {
+            background: rgba(42, 82, 152, 0.1);
+        }
+
+        .nav-btn.active {
+            background: #2a5298;
+            color: #fff;
+        }
+
         .container {
-            max-width: 1600px;
-            margin: 0 auto;
-            padding: 20px;
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .vitals-bar {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .vital-item {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .vital-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .vital-icon.heart {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .vital-icon.bp {
+            background: #dbeafe;
+            color: #3b82f6;
+        }
+
+        .vital-icon.spo2 {
+            background: #d1fae5;
+            color: #10b981;
+        }
+
+        .vital-info .vital-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .vital-info .vital-value {
+            font-size: 22px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .vital-info .vital-unit {
+            font-size: 12px;
+            color: #999;
+            margin-left: 4px;
+        }
+
+        .main-grid {
             display: grid;
             grid-template-columns: 2fr 1fr;
             gap: 20px;
         }
 
         .video-section {
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.9);
             border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
         }
 
         .video-section h2 {
-            font-size: 18px;
+            font-size: 16px;
             margin-bottom: 15px;
             color: #2a5298;
         }
@@ -90,8 +192,8 @@
         }
 
         .video-placeholder svg {
-            width: 80px;
-            height: 80px;
+            width: 60px;
+            height: 60px;
             margin-bottom: 10px;
         }
 
@@ -102,10 +204,10 @@
         }
 
         .card {
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.9);
             border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
         }
 
         .card h3 {
@@ -119,24 +221,24 @@
         .result-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            gap: 12px;
         }
 
         .result-item {
-            background: rgba(0, 0, 0, 0.05);
-            padding: 15px;
+            background: rgba(0, 0, 0, 0.03);
+            padding: 12px;
             border-radius: 8px;
             text-align: center;
         }
 
         .result-item .label {
-            font-size: 12px;
+            font-size: 11px;
             color: #666;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
 
         .result-item .value {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 600;
             color: #333;
         }
@@ -154,165 +256,187 @@
         }
 
         .feedback-box {
-            background: rgba(0, 0, 0, 0.05);
-            padding: 15px;
+            background: rgba(0, 0, 0, 0.03);
+            padding: 12px;
             border-radius: 8px;
-            margin-top: 15px;
-            min-height: 60px;
+            margin-top: 12px;
+            min-height: 50px;
         }
 
         .feedback-box .label {
-            font-size: 12px;
+            font-size: 11px;
             color: #666;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .feedback-box .content {
-            font-size: 16px;
+            font-size: 14px;
             line-height: 1.5;
             color: #333;
         }
 
-        .device-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .device-item {
-            background: rgba(0, 0, 0, 0.05);
-            padding: 12px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .device-item .device-name {
-            font-size: 14px;
-            color: #666;
-        }
-
-        .device-item .device-value {
-            font-size: 18px;
-            font-weight: 600;
-            color: #4ade80;
-        }
-
         .chart-container {
             position: relative;
-            height: 200px;
+            height: 250px;
             margin-top: 10px;
         }
 
-        .stats-bar {
+        .history-controls {
             display: flex;
-            justify-content: space-around;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            gap: 10px;
+            margin-bottom: 15px;
         }
 
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-item .stat-value {
-            font-size: 20px;
-            font-weight: 600;
-            color: #2a5298;
-        }
-
-        .stat-item .stat-label {
-            font-size: 11px;
+        .history-btn {
+            padding: 6px 16px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 6px;
+            background: #fff;
             color: #666;
-            margin-top: 3px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        @media (max-width: 1200px) {
-            .container {
+        .history-btn:hover, .history-btn.active {
+            background: #2a5298;
+            color: #fff;
+            border-color: #2a5298;
+        }
+
+        @media (max-width: 1000px) {
+            .main-grid {
                 grid-template-columns: 1fr;
+            }
+            .vitals-bar {
+                flex-wrap: wrap;
+            }
+            .vital-item {
+                min-width: calc(50% - 10px);
             }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>智慧医院康复动作识别系统</h1>
-        <div class="status" id="connectionStatus">连接中...</div>
+        <div class="header-top">
+            <h1>智慧医院康复动作识别系统</h1>
+            <div class="status" id="connectionStatus">连接中...</div>
+        </div>
+        <div class="nav-bar">
+            <button class="nav-btn active" onclick="switchPage('recognition')">动作识别</button>
+            <button class="nav-btn" onclick="switchPage('history')">数据处理</button>
+        </div>
     </div>
 
     <div class="container">
-        <div class="video-section">
-            <h2>实时视频流</h2>
-            <div class="video-container">
-                <img id="videoStream" src="/video_feed" alt="视频流">
-                <div class="video-placeholder" id="videoPlaceholder">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                    <p>等待视频流...</p>
+        <div id="recognitionPage" class="page active">
+            <div class="vitals-bar">
+                <div class="vital-item">
+                    <div class="vital-icon heart">&#9829;</div>
+                    <div class="vital-info">
+                        <div class="vital-label">心率</div>
+                        <div class="vital-value"><span id="heartRate">--</span><span class="vital-unit">bpm</span></div>
+                    </div>
+                </div>
+                <div class="vital-item">
+                    <div class="vital-icon bp">&#129658;</div>
+                    <div class="vital-info">
+                        <div class="vital-label">血压</div>
+                        <div class="vital-value"><span id="bloodPressure">--/--</span><span class="vital-unit">mmHg</span></div>
+                    </div>
+                </div>
+                <div class="vital-item">
+                    <div class="vital-icon spo2">&#128167;</div>
+                    <div class="vital-info">
+                        <div class="vital-label">血氧</div>
+                        <div class="vital-value"><span id="spo2">--</span><span class="vital-unit">%</span></div>
+                    </div>
                 </div>
             </div>
-            <div class="stats-bar">
-                <div class="stat-item">
-                    <div class="stat-value" id="statProcessed">0</div>
-                    <div class="stat-label">已处理帧</div>
+
+            <div class="main-grid">
+                <div class="video-section">
+                    <h2>实时视频流</h2>
+                    <div class="video-container">
+                        <img id="videoStream" src="/video_feed" alt="视频流">
+                        <div class="video-placeholder" id="videoPlaceholder">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            <p>等待视频流...</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="statAvgScore">0</div>
-                    <div class="stat-label">平均评分</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="statInferenceTime">0ms</div>
-                    <div class="stat-label">推理耗时</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="statDevices">0</div>
-                    <div class="stat-label">设备数量</div>
+
+                <div class="info-section">
+                    <div class="card">
+                        <h3>识别结果</h3>
+                        <div class="result-grid">
+                            <div class="result-item">
+                                <div class="label">动作类型</div>
+                                <div class="value" id="actionType">--</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="label">质量评分</div>
+                                <div class="value score-value" id="qualityScore">--</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="label">置信度</div>
+                                <div class="value" id="confidence">--</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="label">检测人数</div>
+                                <div class="value" id="personsCount">--</div>
+                            </div>
+                        </div>
+                        <div class="feedback-box">
+                            <div class="label">反馈建议</div>
+                            <div class="content" id="feedback">等待识别结果...</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>本次训练评分趋势</h3>
+                        <div class="chart-container">
+                            <canvas id="scoreChart"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="info-section">
+        <div id="historyPage" class="page">
             <div class="card">
-                <h3>识别结果</h3>
-                <div class="result-grid">
-                    <div class="result-item">
-                        <div class="label">动作类型</div>
-                        <div class="value" id="actionType">--</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="label">质量评分</div>
-                        <div class="value score-value" id="qualityScore">--</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="label">置信度</div>
-                        <div class="value" id="confidence">--</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="label">检测人数</div>
-                        <div class="value" id="personsCount">--</div>
-                    </div>
+                <h3>历史训练数据</h3>
+                <div class="history-controls">
+                    <button class="history-btn active" onclick="loadHistory('today')">今天</button>
+                    <button class="history-btn" onclick="loadHistory('week')">本周</button>
+                    <button class="history-btn" onclick="loadHistory('month')">本月</button>
                 </div>
-                <div class="feedback-box">
-                    <div class="label">反馈建议</div>
-                    <div class="content" id="feedback">等待识别结果...</div>
+                <div class="chart-container" style="height: 350px;">
+                    <canvas id="historyChart"></canvas>
                 </div>
             </div>
 
-            <div class="card">
-                <h3>评分趋势</h3>
-                <div class="chart-container">
-                    <canvas id="scoreChart"></canvas>
-                </div>
-            </div>
-
-            <div class="card">
-                <h3>其他设备数据</h3>
-                <div class="device-list" id="deviceList">
-                    <div class="device-item">
-                        <span class="device-name">等待设备连接...</span>
+            <div class="card" style="margin-top: 20px;">
+                <h3>训练统计</h3>
+                <div class="result-grid" style="margin-top: 15px;">
+                    <div class="result-item">
+                        <div class="label">训练次数</div>
+                        <div class="value" id="totalSessions">0</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="label">平均评分</div>
+                        <div class="value" id="avgScore">0</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="label">最高评分</div>
+                        <div class="value score-value" id="maxScore">0</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="label">平均心率</div>
+                        <div class="value" id="avgHeartRate">0</div>
                     </div>
                 </div>
             </div>
@@ -322,9 +446,11 @@
     <script>
         const socket = io();
         const scoreHistory = [];
-        const maxHistory = 20;
+        const maxHistory = 30;
         let processedCount = 0;
         let totalScore = 0;
+
+        let historyChart = null;
 
         const statusEl = document.getElementById('connectionStatus');
         const actionTypeEl = document.getElementById('actionType');
@@ -334,7 +460,10 @@
         const feedbackEl = document.getElementById('feedback');
         const videoPlaceholder = document.getElementById('videoPlaceholder');
         const videoStream = document.getElementById('videoStream');
-        const deviceListEl = document.getElementById('deviceList');
+
+        const heartRateEl = document.getElementById('heartRate');
+        const bloodPressureEl = document.getElementById('bloodPressure');
+        const spo2El = document.getElementById('spo2');
 
         const scoreCtx = document.getElementById('scoreChart').getContext('2d');
         const scoreChart = new Chart(scoreCtx, {
@@ -354,23 +483,122 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
                     y: {
                         beginAtZero: true,
                         max: 100,
-                        grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                        grid: { color: 'rgba(0, 0, 0, 0.05)' },
                         ticks: { color: '#666' }
                     },
                     x: {
-                        grid: { color: 'rgba(0, 0, 0, 0.1)' },
-                        ticks: { color: '#666' }
+                        grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                        ticks: { color: '#666', maxTicksLimit: 6 }
                     }
                 }
             }
         });
+
+        function switchPage(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+            if (page === 'recognition') {
+                document.getElementById('recognitionPage').classList.add('active');
+                document.querySelectorAll('.nav-btn')[0].classList.add('active');
+            } else {
+                document.getElementById('historyPage').classList.add('active');
+                document.querySelectorAll('.nav-btn')[1].classList.add('active');
+                loadHistory('today');
+            }
+        }
+
+        function loadHistory(period) {
+            document.querySelectorAll('.history-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            fetch(`/api/history?period=${period}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.history || data.history.length === 0) {
+                        return;
+                    }
+
+                    const records = data.history;
+                    const labels = records.map(r => {
+                        const d = new Date(r.timestamp);
+                        return `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+                    });
+                    const scores = records.map(r => r.score);
+                    const heartRates = records.map(r => r.heart_rate || 0);
+
+                    if (historyChart) {
+                        historyChart.destroy();
+                    }
+
+                    const ctx = document.getElementById('historyChart').getContext('2d');
+                    historyChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: '评分',
+                                    data: scores,
+                                    borderColor: '#4ade80',
+                                    backgroundColor: 'rgba(74, 222, 128, 0.1)',
+                                    borderWidth: 2,
+                                    fill: true,
+                                    tension: 0.4,
+                                    yAxisID: 'y'
+                                },
+                                {
+                                    label: '心率',
+                                    data: heartRates,
+                                    borderColor: '#ef4444',
+                                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0.4,
+                                    yAxisID: 'y1'
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: true, position: 'top' } },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                                    ticks: { color: '#666' },
+                                    title: { display: true, text: '评分', color: '#666' }
+                                },
+                                y1: {
+                                    position: 'right',
+                                    beginAtZero: true,
+                                    max: 200,
+                                    grid: { drawOnChartArea: false },
+                                    ticks: { color: '#ef4444' },
+                                    title: { display: true, text: '心率 (bpm)', color: '#ef4444' }
+                                },
+                                x: {
+                                    grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                                    ticks: { color: '#666', maxTicksLimit: 10 }
+                                }
+                            }
+                        }
+                    });
+
+                    const stats = data.stats || {};
+                    document.getElementById('totalSessions').textContent = stats.total_sessions || records.length;
+                    document.getElementById('avgScore').textContent = stats.avg_score ? stats.avg_score.toFixed(1) : (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1);
+                    document.getElementById('maxScore').textContent = stats.max_score || Math.max(...scores);
+                    document.getElementById('avgHeartRate').textContent = stats.avg_heart_rate ? stats.avg_heart_rate.toFixed(0) : (heartRates.filter(r=>r>0).reduce((a,b)=>a+b,0)/heartRates.filter(r=>r>0).length).toFixed(0) || '--';
+                });
+        }
 
         socket.on('connect', () => {
             statusEl.textContent = '已连接';
@@ -399,12 +627,6 @@
             if (result.quality_score) {
                 processedCount++;
                 totalScore += result.quality_score;
-                document.getElementById('statProcessed').textContent = processedCount;
-                document.getElementById('statAvgScore').textContent = (totalScore / processedCount).toFixed(1);
-            }
-
-            if (result.inference_time) {
-                document.getElementById('statInferenceTime').textContent = (result.inference_time * 1000).toFixed(0) + 'ms';
             }
 
             const now = new Date().toLocaleTimeString('zh-CN');
@@ -418,31 +640,13 @@
             videoPlaceholder.style.display = 'none';
         });
 
-        socket.on('device_data_update', (data) => {
-            updateDeviceList(data);
+        socket.on('vitals_update', (data) => {
+            if (data.heart_rate) heartRateEl.textContent = data.heart_rate;
+            if (data.systolic && data.diastolic) {
+                bloodPressureEl.textContent = `${data.systolic}/${data.diastolic}`;
+            }
+            if (data.spo2) spo2El.textContent = data.spo2;
         });
-
-        function updateDeviceList(data) {
-            const deviceData = data.data || {};
-            const deviceId = data.device_id || '未知设备';
-
-            let html = '';
-            for (const [key, value] of Object.entries(deviceData)) {
-                if (key === 'device_id' || key === 'timestamp') continue;
-                html += `
-                    <div class="device-item">
-                        <span class="device-name">${key}</span>
-                        <span class="device-value">${typeof value === 'number' ? value.toFixed(1) : value}</span>
-                    </div>
-                `;
-            }
-
-            if (html) {
-                deviceListEl.innerHTML = html;
-                document.getElementById('statDevices').textContent = 
-                    document.querySelectorAll('.device-item').length;
-            }
-        }
 
         videoStream.onload = () => {
             videoPlaceholder.style.display = 'none';

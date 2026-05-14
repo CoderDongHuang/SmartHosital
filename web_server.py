@@ -6,13 +6,15 @@
 #   2. 推送实时视频流（MJPEG）
 #   3. 通过 WebSocket 推送识别结果数据
 #   4. 接收其他硬件设备数据（血压、心率等）
+#   5. 使用 SQLite 存储历史训练数据
 import cv2
 import json
 import logging
+import sqlite3
 import threading
 from flask import Flask, Response, render_template, jsonify, request
 from flask_socketio import SocketIO, emit
-from datetime import datetime
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +23,32 @@ app.config['SECRET_KEY'] = 'smart_hospital_secret'
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 
+def init_db(db_path='rehab.db'):
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS training_data 
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, 
+                  score REAL, 
+                  knee_angle REAL, 
+                  hip_angle REAL,
+                  heart_rate INTEGER, 
+                  systolic_bp INTEGER, 
+                  diastolic_bp INTEGER,
+                  spo2 INTEGER,
+                  action_type TEXT, 
+                  feedback TEXT)''')
+    conn.commit()
+    conn.close()
+    logger.info(f"数据库初始化完成: {db_path}")
+
+
 class WebServer:
     def __init__(self, config):
         self.config = config
         self.port = config.get('web_port', 5000)
         self.host = config.get('web_host', '0.0.0.0')
+        self.db_path = config.get('db_path', 'rehab.db')
 
         self.current_frame = None
         self.frame_lock = threading.Lock()
@@ -33,10 +56,17 @@ class WebServer:
         self.latest_result = None
         self.result_lock = threading.Lock()
 
-        self.device_data = {}
-        self.device_data_lock = threading.Lock()
+        self.vitals_data = {}
+        self.vitals_lock = threading.Lock()
+
+        init_db(self.db_path)
 
         self._setup_routes()
+
+    def _get_db(self):
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
 
     def _setup_routes(self):
         @app.route('/')
@@ -55,30 +85,53 @@ class WebServer:
             with self.result_lock:
                 return jsonify(self.latest_result or {})
 
-        @app.route('/api/device_data', methods=['GET'])
-        def get_device_data():
-            with self.device_data_lock:
-                return jsonify(self.device_data)
-
-        @app.route('/api/device_data', methods=['POST'])
-        def post_device_data():
+        @app.route('/api/vitals', methods=['POST'])
+        def post_vitals():
             data = request.json
-            if not data or 'device_id' not in data:
-                return jsonify({'error': '缺少 device_id'}), 400
+            if not data:
+                return jsonify({'error': '缺少数据'}), 400
 
-            device_id = data['device_id']
-            with self.device_data_lock:
-                self.device_data[device_id] = {
-                    'data': data,
-                    'updated_at': datetime.now().isoformat()
-                }
+            with self.vitals_lock:
+                self.vitals_data.update(data)
 
-            socketio.emit('device_data_update', {
-                'device_id': device_id,
-                'data': data
-            })
+            socketio.emit('vitals_update', self.vitals_data)
 
             return jsonify({'status': 'success'})
+
+        @app.route('/api/history')
+        def get_history():
+            period = request.args.get('period', 'today')
+
+            now = datetime.now()
+            if period == 'today':
+                start_time = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            elif period == 'week':
+                start_time = now - timedelta(days=7)
+            elif period == 'month':
+                start_time = now - timedelta(days=30)
+            else:
+                start_time = now - timedelta(days=1)
+
+            conn = self._get_db()
+            c = conn.cursor()
+            c.execute('''SELECT timestamp, score, knee_angle, hip_angle, heart_rate, 
+                                systolic_bp, diastolic_bp, spo2, action_type, feedback 
+                         FROM training_data 
+                         WHERE timestamp >= ? 
+                         ORDER BY timestamp ASC''', (start_time.isoformat(),))
+            records = [dict(row) for row in c.fetchall()]
+
+            c.execute('''SELECT COUNT(*) as total_sessions, 
+                                AVG(score) as avg_score, 
+                                MAX(score) as max_score, 
+                                AVG(heart_rate) as avg_heart_rate 
+                         FROM training_data 
+                         WHERE timestamp >= ?''', (start_time.isoformat(),))
+            stats = dict(c.fetchone())
+
+            conn.close()
+
+            return jsonify({'history': records, 'stats': stats})
 
     def _generate_frames(self):
         while True:
@@ -101,7 +154,33 @@ class WebServer:
         with self.result_lock:
             self.latest_result = result
 
+        self._save_to_db(result)
+
         socketio.emit('result_update', result)
+
+    def _save_to_db(self, result):
+        try:
+            result_data = result.get('result', {})
+            joint_angles = result_data.get('joint_angles', {})
+
+            conn = self._get_db()
+            c = conn.cursor()
+            c.execute('''INSERT INTO training_data 
+                         (score, knee_angle, hip_angle, heart_rate, systolic_bp, diastolic_bp, spo2, action_type, feedback) 
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                      (result_data.get('quality_score', 0),
+                       joint_angles.get('left_knee', 0),
+                       joint_angles.get('left_hip', 0),
+                       self.vitals_data.get('heart_rate'),
+                       self.vitals_data.get('systolic'),
+                       self.vitals_data.get('diastolic'),
+                       self.vitals_data.get('spo2'),
+                       result_data.get('action_type', ''),
+                       result_data.get('feedback', '')))
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            logger.error(f"保存数据库失败: {e}")
 
     def run(self):
         logger.info(f"Web 服务器启动在 http://{self.host}:{self.port}")
